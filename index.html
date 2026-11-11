@@ -240,6 +240,45 @@
             margin-bottom: 20px;
         }
 
+        .guide-box {
+            background: #FFF9E6;
+            border: 1px solid #FFE082;
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #5D4037;
+        }
+
+        .guide-box strong {
+            color: #E65100;
+        }
+
+        .guide-box ol {
+            margin-top: 6px;
+            padding-left: 20px;
+        }
+
+        .guide-box li {
+            margin-bottom: 4px;
+        }
+
+        .copy-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #FFF;
+            border: 1px solid #E0B543;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #333;
+            cursor: pointer;
+            margin: 2px 0;
+        }
+
         .section-title {
             font-size: 14px;
             font-weight: 700;
@@ -440,15 +479,38 @@
             <!-- 카카오 JavaScript 앱 키 -->
             <div class="input-group">
                 <label>카카오 Javascript 앱 키</label>
-                <input type="text" id="inputAppKey" value="762a46d7e5b7dbece3eddbb232189a84">
-                <small>기본 내장된 키를 사용하거나, 본인의 Kakao Developers JS 키를 입력할 수 있습니다.</small>
+                <input type="text" id="inputAppKey" placeholder="본인의 카카오 JavaScript 키 (32자리)" value="">
+                <small>입력한 키는 브라우저에 안전하게 자동 저장됩니다.</small>
+            </div>
+
+            <!-- 요청실패 해결 가이드 상자 -->
+            <div class="guide-box">
+                <strong>⚠️ '요청실패'가 뜨는 원인과 1분 해결법</strong>
+                <p style="margin-top:4px;">
+                    카카오톡 보안 정책상 <strong>등록된 사이트 도메인</strong>에서만 메시지를 발송할 수 있습니다. 본인의 무료 카카오 개발자 앱에 이 사이트 도메인을 1회 등록하셔야 합니다.
+                </p>
+                <ol>
+                    <li><a href="https://developers.kakao.com" target="_blank" style="color:#0277BD; font-weight:700;">developers.kakao.com</a> 로그인 (카카오 계정)</li>
+                    <li><strong>[내 애플리케이션]</strong> &gt; <strong>[애플리케이션 추가하기]</strong> (이름 아무거나 입력)</li>
+                    <li><strong>[플랫폼]</strong> &gt; <strong>[Web 플랫폼 등록]</strong> 클릭 후 아래 도메인 등록:<br>
+                        <span class="copy-chip" onclick="copyDomain()" title="클릭하여 복사">
+                            <span id="domainText">https://aaa03172-creator.github.io</span> 📋
+                        </span>
+                    </li>
+                    <li><strong>[앱 설정]</strong> &gt; <strong>[요약 정보]</strong>의 <strong>JavaScript 키</strong>를 복사해 위 입력창에 붙여넣기!</li>
+                </ol>
             </div>
         </main>
 
-        <!-- 카카오톡으로 저지르기 전송 버튼 -->
-        <button class="btn-send" id="btnSend" onclick="sendKakaoPrank()">
-            <span>💬 카카오톡으로 저지르기 (친구에게 전송)</span>
-        </button>
+        <!-- 버튼 영역 -->
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn-send" id="btnSend" onclick="sendKakaoPrank()">
+                <span>💬 카카오톡으로 저지르기 (친구에게 전송)</span>
+            </button>
+            <button onclick="copyPrankLink()" style="width:100%; height:46px; background:#FFFFFF; border:1px solid #DDD; border-radius:12px; font-size:14px; font-weight:600; color:#555; cursor:pointer;">
+                🔗 키 등록 없이 낚시 링크 바로 복사하기
+            </button>
+        </div>
     </div>
 
     <!-- 토스트 메시지 -->
@@ -605,32 +667,66 @@
             document.getElementById('cardFooterText').textContent = tmpl.footerText;
         }
 
+        // 도메인 복사 함수
+        function copyDomain() {
+            const domain = window.location.origin;
+            navigator.clipboard.writeText(domain).then(() => {
+                showToast("도메인 주소가 복사되었습니다: " + domain);
+            });
+        }
+
+        // 키 없이 링크 복사 함수
+        function copyPrankLink() {
+            const redirectUrl = document.getElementById('inputRedirectUrl').value.trim() || defaultTrolledUrl;
+            navigator.clipboard.writeText(redirectUrl).then(() => {
+                showToast("낚시 링크가 복사되었습니다! 카톡에 붙여넣어 보세요 🎣");
+            });
+        }
+
         // 카카오톡 SDK 초기화
         function initKakaoSDK() {
-            const key = document.getElementById('inputAppKey').value.trim();
+            const keyInput = document.getElementById('inputAppKey');
+            const key = keyInput.value.trim();
+
             if (!window.Kakao) {
                 console.error("Kakao SDK not loaded");
                 return false;
             }
-            if (!window.Kakao.isInitialized()) {
-                try {
-                    window.Kakao.init(key);
-                    document.getElementById('sdkStatus').textContent = "SDK 준비됨";
-                    document.getElementById('sdkStatus').className = "status-badge ok";
-                    return true;
-                } catch (e) {
-                    document.getElementById('sdkStatus').textContent = "키 오류";
-                    document.getElementById('sdkStatus').className = "status-badge warn";
-                    return false;
-                }
+
+            if (!key) {
+                document.getElementById('sdkStatus').textContent = "키 필요";
+                document.getElementById('sdkStatus').className = "status-badge warn";
+                return false;
             }
-            return true;
+
+            try {
+                if (window.Kakao.isInitialized()) {
+                    window.Kakao.cleanup();
+                }
+                window.Kakao.init(key);
+                document.getElementById('sdkStatus').textContent = "SDK 준비됨";
+                document.getElementById('sdkStatus').className = "status-badge ok";
+                localStorage.setItem('kakao_app_key', key);
+                return true;
+            } catch (e) {
+                console.error(e);
+                document.getElementById('sdkStatus').textContent = "키 오류";
+                document.getElementById('sdkStatus').className = "status-badge warn";
+                return false;
+            }
         }
 
         // 카카오톡으로 전송 실행
         function sendKakaoPrank() {
+            const key = document.getElementById('inputAppKey').value.trim();
+            if (!key) {
+                alert("카카오 JavaScript 키를 입력해 주세요!\n\n하단의 안내에 따라 developers.kakao.com에서 무료로 발급받으실 수 있습니다 (1분 소요).");
+                document.getElementById('inputAppKey').focus();
+                return;
+            }
+
             if (!initKakaoSDK()) {
-                showToast("카카오 앱 키를 확인해 주세요.");
+                alert("카카오 키 초기화에 실패했습니다. 키를 다시 확인해주세요.");
                 return;
             }
 
@@ -666,12 +762,13 @@
                                 webUrl: redirectUrl
                             }
                         }
-                    ]
+                    ],
+                    serverCallbackArgs: { key: "prank" }
                 });
                 showToast("카카오톡으로 공유 창이 열립니다! 🚀");
             } catch (err) {
                 console.error(err);
-                showToast("전송 중 오류가 발생했습니다: " + err.message);
+                alert("카카오톡 전송 오류:\n" + err.message + "\n\n현재 도메인(" + window.location.origin + ")이 카카오 개발자 콘솔 [플랫폼 > Web]에 등록되어 있는지 확인해주세요!");
             }
         }
 
@@ -685,6 +782,23 @@
         // 초기 실행
         window.addEventListener('DOMContentLoaded', () => {
             switchTab('firstCome');
+            
+            // 저장된 키 불러오기 또는 기본값 설정
+            const savedKey = localStorage.getItem('kakao_app_key');
+            if (savedKey) {
+                document.getElementById('inputAppKey').value = savedKey;
+            }
+            
+            // 현재 도메인 텍스트 설정
+            const domainText = document.getElementById('domainText');
+            if (domainText) {
+                domainText.textContent = window.location.origin;
+            }
+
+            document.getElementById('inputAppKey').addEventListener('input', () => {
+                initKakaoSDK();
+            });
+
             initKakaoSDK();
         });
     </script>
