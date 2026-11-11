@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>선착순 선물 게임</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", sans-serif;
+            background-color: #F8F9FA;
+            color: #191919;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 40px 24px;
+            border-radius: 24px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            max-width: 380px;
+            width: 100%;
+        }
+        .fish-icon {
+            font-size: 72px;
+            display: inline-block;
+            animation: bounce 0.8s infinite alternate ease-in-out;
+            margin-bottom: 16px;
+        }
+        @keyframes bounce {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-12px) rotate(10deg); }
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            color: #111;
+        }
+        p {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 28px;
+            word-break: keep-all;
+        }
+        .btn-revive {
+            display: block;
+            width: 100%;
+            background: #FEE500;
+            color: #191919;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 16px;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(254, 229, 0, 0.4);
+            transition: transform 0.1s ease;
+        }
+        .btn-revive:active {
+            transform: scale(0.97);
+        }
+        .footer-note {
+            margin-top: 18px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="fish-icon">🎣</div>
+        <h1>하하 낚시지롱!</h1>
+        <p>
+            순수한 마음으로 선착순 선물을 기대하셨나요? 🤣<br>
+            아쉽게도 선착순 낚시에 걸려드셨습니다!<br><br>
+            오늘 하루도 크게 웃고 즐거운 시간 보내세요 ✨
+        </p>
+        <a href="./index.html" class="btn-revive">나만 당할 순 없지! (나도 낚으러 가기)</a>
+        <div class="footer-note">KakaoTalk Prank Project</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kakaolink Sender - 카카오톡 낚시 생성기</title>
+
+    <!-- 카카오 공식 JavaScript SDK (최신 버전) -->
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #FEE500;
+            --primary-hover: #EED600;
+            --kakao-brown: #3C1E1E;
+            --text-main: #191919;
+            --text-sub: #666666;
+            --chat-bg: #BACEE0; /* 실제 카카오톡 기본 채팅방 배경색 */
+            --border-color: #E2E2E2;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", sans-serif;
+            background-color: #F4F5F7;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px 16px 60px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        /* 헤더 (KakaoNacksee 원본 스타일 계승) */
+        .header {
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #111;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header p {
+            margin-top: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-sub);
+            word-break: keep-all;
+        }
+
+        /* 탭 바 */
+        .tab-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            background: #E8EAEF;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 4px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: #FFF;
+            color: #111;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            font-weight: 700;
+        }
+
+        /* 카카오톡 대화방 실감 미리보기 영역 */
+        .chat-simulation-wrapper {
+            background: var(--chat-bg);
+            border-radius: 16px;
+            padding: 20px 16px;
+            margin-bottom: 24px;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-simulation-header {
+            font-size: 11px;
+            font-weight: 700;
+            color: #556B82;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .chat-message-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 16px;
+            background: #FFEB00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .message-content-col {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .user-nickname {
+            font-size: 12px;
+            color: #4A5B6D;
+            font-weight: 600;
+        }
+
+        /* 실제 카카오톡 카드 말풍선 디자인 (100% 실감) */
+        .kakaotalk-card {
+            width: 250px;
+            background: #FFFFFF;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+        }
+
+        .kakaotalk-card-img-wrap {
+            width: 100%;
+            height: 180px;
+            background: #EEE;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .kakaotalk-card-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .kakaotalk-card-body {
+            padding: 12px 14px 10px;
+        }
+
+        .kakaotalk-card-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #191919;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+
+        .kakaotalk-card-desc {
+            font-size: 12px;
+            color: #777;
+            margin-top: 4px;
+            line-height: 1.35;
+        }
+
+        .kakaotalk-card-btn {
+            background: #F5F5F5;
+            border-top: 1px solid #ECECEC;
+            padding: 11px 0;
+            text-align: center;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .kakaotalk-card-footer {
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid #F0F0F0;
+            background: #FAFAFA;
+        }
+
+        .footer-source {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .footer-source-icon {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            object-fit: contain;
+        }
+
+        .footer-source-text {
+            font-size: 11px;
+            color: #999999;
+        }
+
+        .footer-arrow {
+            font-size: 11px;
+            color: #BBB;
+        }
+
+        /* 폼 카드 */
+        .form-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            height: 44px;
+            padding: 0 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            font-family: inherit;
+            background: #FFF;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: #FFD900;
+            box-shadow: 0 0 0 3px rgba(254, 229, 0, 0.35);
+        }
+
+        .input-group small {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* 대형 카카오톡 전송 버튼 */
+        .btn-send {
+            width: 100%;
+            height: 54px;
+            background: var(--primary);
+            color: var(--kakao-brown);
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(254, 229, 0, 0.5);
+            transition: all 0.15s ease;
+        }
+
+        .btn-send:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-send:active {
+            transform: scale(0.98);
+        }
+
+        .btn-send:disabled {
+            background: #E5E5E5;
+            color: #999;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* 토스트 */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(25, 25, 25, 0.9);
+            color: #FFF;
+            padding: 12px 22px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.25s ease;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .status-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .status-badge.ok {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+        .status-badge.warn {
+            background: #FFF3E0;
+            color: #EF6C00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <header class="header">
+            <h1>🎁 Kakaolink Sender</h1>
+            <p>
+                카카오톡 공식 공유 SDK를 이용해 진짜 카카오톡 메시지 박스 형태로 전송합니다.
+                친구들이 절대 의심하지 않고 달려들게 만들어 보세요!
+            </p>
+        </header>
+
+        <!-- 템플릿 선택 탭 -->
+        <nav class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('firstCome')">선착순 선물</button>
+            <button class="tab-btn" onclick="switchTab('transfer')">카카오 송금</button>
+            <button class="tab-btn" onclick="switchTab('gifticon')">기프티콘</button>
+            <button class="tab-btn" onclick="switchTab('envelope')">용돈/봉투</button>
+        </nav>
+
+        <!-- 카카오톡 대화방 실감 미리보기 -->
+        <section class="chat-simulation-wrapper">
+            <div class="chat-simulation-header">
+                <span>💬 카카오톡 채팅방 미리보기 (실제 표시될 모양)</span>
+            </div>
+            <div class="chat-message-row">
+                <div class="user-avatar">👤</div>
+                <div class="message-content-col">
+                    <span class="user-nickname">나</span>
+                    <!-- 카카오톡 카드 -->
+                    <div class="kakaotalk-card">
+                        <div class="kakaotalk-card-img-wrap">
+                            <img id="cardImg" src="https://kakao-nacksee.vercel.app/images/giftTitle.png" alt="카드 이미지">
+                        </div>
+                        <div class="kakaotalk-card-body">
+                            <div class="kakaotalk-card-title" id="cardTitle">
+                                선착순 선물 게임을 시작합니다! 기회는 단 10분간, 선착순 2명에게!
+                            </div>
+                            <div class="kakaotalk-card-desc" id="cardDesc" style="display:none;"></div>
+                        </div>
+                        <div class="kakaotalk-card-btn" id="cardBtnText">
+                            지금 달려가기
+                        </div>
+                        <div class="kakaotalk-card-footer">
+                            <div class="footer-source">
+                                <img class="footer-source-icon" id="cardFooterIcon" src="https://kakao-nacksee.vercel.app/images/kagift.png" alt="icon">
+                                <span class="footer-source-text" id="cardFooterText">선물 바로가기</span>
+                            </div>
+                            <span class="footer-arrow">›</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 세부 설정 폼 -->
+        <main class="form-card">
+            <div class="section-title">
+                <span>세부 설정</span>
+                <span class="status-badge ok" id="sdkStatus">SDK 준비됨</span>
+            </div>
+
+            <!-- 동적 입력 필드 컨테이너 -->
+            <div id="dynamicInputs"></div>
+
+            <!-- 리다이렉트 URL (피해자가 클릭 시 이동할 페이지) -->
+            <div class="input-group" style="margin-top: 16px;">
+                <label>낚시 착륙 페이지 (Redirect URL)</label>
+                <input type="text" id="inputRedirectUrl" value="">
+                <small>버튼 클릭 시 피해자가 이동할 페이지입니다 (기본값: trolled.html).</small>
+            </div>
+
+            <!-- 카카오 JavaScript 앱 키 -->
+            <div class="input-group">
+                <label>카카오 Javascript 앱 키</label>
+                <input type="text" id="inputAppKey" value="762a46d7e5b7dbece3eddbb232189a84">
+                <small>기본 내장된 키를 사용하거나, 본인의 Kakao Developers JS 키를 입력할 수 있습니다.</small>
+            </div>
+        </main>
+
+        <!-- 카카오톡으로 저지르기 전송 버튼 -->
+        <button class="btn-send" id="btnSend" onclick="sendKakaoPrank()">
+            <span>💬 카카오톡으로 저지르기 (친구에게 전송)</span>
+        </button>
+    </div>
+
+    <!-- 토스트 메시지 -->
+    <div class="toast" id="toast">메시지</div>
+
+    <script>
+        // 현재 호스팅 주소 기반 trolled.html 절대경로 자동 계산
+        const defaultTrolledUrl = new URL('trolled.html', window.location.href).href;
+        document.getElementById('inputRedirectUrl').value = defaultTrolledUrl;
+
+        // 템플릿 데이터 정의
+        const TEMPLATES = {
+            firstCome: {
+                name: '선착순 선물 게임',
+                imageUrl: 'https://kakao-nacksee.vercel.app/images/giftTitle.png',
+                footerIcon: 'https://kakao-nacksee.vercel.app/images/kagift.png',
+                footerText: '선물 바로가기',
+                btnText: '지금 달려가기',
+                fields: [
+                    { id: 'duration', label: '제한 시간', type: 'text', default: '10분간' },
+                    { id: 'members', label: '선착순 인원 (명)', type: 'number', default: '2' }
+                ],
+                getTitle: (vals) => `선착순 선물 게임을 시작합니다! 기회는 단 ${vals.duration || '10분간'}, 선착순 ${vals.members || '2'}명에게!`
+            },
+            transfer: {
+                name: '카카오페이 송금',
+                imageUrl: 'https://i.ibb.co/pWTd4Rj/transfer.png',
+                footerIcon: 'https://i.ibb.co/pWTd4Rj/transfer.png',
+                footerText: 'pay',
+                btnText: '받기',
+                fields: [
+                    { id: 'amount', label: '송금 금액 (원)', type: 'text', default: '50,000' }
+                ],
+                getTitle: (vals) => `${vals.amount || '50,000'} 원을 받으세요.`
+            },
+            gifticon: {
+                name: '기프티콘 선물',
+                imageUrl: 'https://i.ibb.co/cbyf25d/gifticon-starbucks.png',
+                footerIcon: 'https://kakao-nacksee.vercel.app/images/kagift.png',
+                footerText: '선물 바로가기',
+                btnText: '선물함으로 가기',
+                fields: [
+                    { id: 'sender', label: '보내는 사람 이름', type: 'text', default: '김철수' }
+                ],
+                getTitle: (vals) => `${vals.sender || '친구'}님이 선물과 메시지를 보냈습니다.`
+            },
+            envelope: {
+                name: '카카오페이 봉투',
+                imageUrl: 'https://i.ibb.co/6tpn2rM/yongdon.png',
+                footerIcon: 'https://i.ibb.co/pWTd4Rj/transfer.png',
+                footerText: 'pay',
+                btnText: '받기',
+                fields: [
+                    {
+                        id: 'envelopeType',
+                        label: '봉투 디자인 선택',
+                        type: 'select',
+                        default: 'yongdon',
+                        options: [
+                            { val: 'https://i.ibb.co/6tpn2rM/yongdon.png', label: '용돈 봉투' },
+                            { val: 'https://i.ibb.co/fCrY699/jungsaan.png', label: '정산 봉투' },
+                            { val: 'https://i.ibb.co/0VQB5Cv/thankyouv3.png', label: '감사 봉투' },
+                            { val: 'https://i.ibb.co/ZSJKnyY/congratulation.png', label: '축하 봉투' },
+                            { val: 'https://i.ibb.co/WDkHf67/berich.png', label: '부자되세요 봉투' },
+                            { val: 'https://i.ibb.co/tBNPJVq/myheart.png', label: '내 마음 봉투' }
+                        ]
+                    }
+                ],
+                getTitle: () => '봉투가 도착했어요.'
+            }
+        };
+
+        let currentTab = 'firstCome';
+        let fieldValues = {};
+
+        // 탭 전환 및 폼 렌더링
+        function switchTab(tabKey) {
+            currentTab = tabKey;
+            document.querySelectorAll('.tab-btn').forEach((b, idx) => {
+                b.classList.toggle('active', Object.keys(TEMPLATES)[idx] === tabKey);
+            });
+
+            const tmpl = TEMPLATES[tabKey];
+            const container = document.getElementById('dynamicInputs');
+            container.innerHTML = '';
+            fieldValues = {};
+
+            tmpl.fields.forEach(field => {
+                const group = document.createElement('div');
+                group.className = 'input-group';
+
+                const label = document.createElement('label');
+                label.textContent = field.label;
+                group.appendChild(label);
+
+                if (field.type === 'select') {
+                    const select = document.createElement('select');
+                    field.options.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt.val;
+                        option.textContent = opt.label;
+                        select.appendChild(option);
+                    });
+                    select.value = field.options[0].val;
+                    fieldValues[field.id] = select.value;
+                    select.onchange = (e) => {
+                        fieldValues[field.id] = e.target.value;
+                        updatePreview();
+                    };
+                    group.appendChild(select);
+                } else {
+                    const input = document.createElement('input');
+                    input.type = field.type;
+                    input.value = field.default;
+                    fieldValues[field.id] = field.default;
+
+                    // 금액 콤마 자동 포맷팅
+                    if (field.id === 'amount') {
+                        input.oninput = (e) => {
+                            let val = e.target.value.replace(/[^0-9]/g, '');
+                            if (val) val = new Intl.NumberFormat().format(val);
+                            e.target.value = val;
+                            fieldValues[field.id] = val;
+                            updatePreview();
+                        };
+                    } else {
+                        input.oninput = (e) => {
+                            fieldValues[field.id] = e.target.value;
+                            updatePreview();
+                        };
+                    }
+                    group.appendChild(input);
+                }
+                container.appendChild(group);
+            });
+
+            updatePreview();
+        }
+
+        // 채팅방 카드 미리보기 실시간 업데이트
+        function updatePreview() {
+            const tmpl = TEMPLATES[currentTab];
+            let img = tmpl.imageUrl;
+            if (currentTab === 'envelope' && fieldValues['envelopeType']) {
+                img = fieldValues['envelopeType'];
+            }
+
+            const title = tmpl.getTitle(fieldValues);
+
+            document.getElementById('cardImg').src = img;
+            document.getElementById('cardTitle').textContent = title;
+            document.getElementById('cardBtnText').textContent = tmpl.btnText;
+            document.getElementById('cardFooterIcon').src = tmpl.footerIcon;
+            document.getElementById('cardFooterText').textContent = tmpl.footerText;
+        }
+
+        // 카카오톡 SDK 초기화
+        function initKakaoSDK() {
+            const key = document.getElementById('inputAppKey').value.trim();
+            if (!window.Kakao) {
+                console.error("Kakao SDK not loaded");
+                return false;
+            }
+            if (!window.Kakao.isInitialized()) {
+                try {
+                    window.Kakao.init(key);
+                    document.getElementById('sdkStatus').textContent = "SDK 준비됨";
+                    document.getElementById('sdkStatus').className = "status-badge ok";
+                    return true;
+                } catch (e) {
+                    document.getElementById('sdkStatus').textContent = "키 오류";
+                    document.getElementById('sdkStatus').className = "status-badge warn";
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // 카카오톡으로 전송 실행
+        function sendKakaoPrank() {
+            if (!initKakaoSDK()) {
+                showToast("카카오 앱 키를 확인해 주세요.");
+                return;
+            }
+
+            const tmpl = TEMPLATES[currentTab];
+            let img = tmpl.imageUrl;
+            if (currentTab === 'envelope' && fieldValues['envelopeType']) {
+                img = fieldValues['envelopeType'];
+            }
+
+            const title = tmpl.getTitle(fieldValues);
+            const redirectUrl = document.getElementById('inputRedirectUrl').value.trim() || defaultTrolledUrl;
+
+            // 카카오톡 공식 Feed 공유 메시지 발송
+            try {
+                window.Kakao.Share.sendDefault({
+                    objectType: 'feed',
+                    content: {
+                        title: title,
+                        description: '',
+                        imageUrl: img,
+                        imageWidth: currentTab === 'transfer' ? 264 : (currentTab === 'envelope' ? 150 : 800),
+                        imageHeight: currentTab === 'transfer' ? 100 : (currentTab === 'envelope' ? 50 : 600),
+                        link: {
+                            mobileWebUrl: redirectUrl,
+                            webUrl: redirectUrl
+                        }
+                    },
+                    buttons: [
+                        {
+                            title: tmpl.btnText,
+                            link: {
+                                mobileWebUrl: redirectUrl,
+                                webUrl: redirectUrl
+                            }
+                        }
+                    ]
+                });
+                showToast("카카오톡으로 공유 창이 열립니다! 🚀");
+            } catch (err) {
+                console.error(err);
+                showToast("전송 중 오류가 발생했습니다: " + err.message);
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // 초기 실행
+        window.addEventListener('DOMContentLoaded', () => {
+            switchTab('firstCome');
+            initKakaoSDK();
+        });
+    </script>
+</body>
+</html>
